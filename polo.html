@@ -1,0 +1,454 @@
+                
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tailor Made - 3D Polo Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-main: #0a0a0a;
+            --bg-secondary: #121212;
+            --bg-card: #1e1e1e;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent: #2563eb;
+            --border: #333333;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .mobile-swatch-active { 
+            border: 2px solid var(--accent) !important; 
+            padding: 3px; 
+            background-clip: content-box !important;
+            transform: scale(1.15);
+            z-index: 10;
+        }
+
+        .swatch-active {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 2px var(--bg-secondary), 0 0 0 4px var(--accent);
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        #canvas-container canvas { width: 100% !important; height: 100% !important; outline: none; }
+        #mobile-menu { transition: transform 0.3s ease-in-out; }
+        .menu-hidden { transform: translateX(100%); }
+
+        @media (min-width: 768px) {
+            #config-panel {
+                position: absolute;
+                right: 30px;
+                top: 30px;
+                bottom: 30px;
+                width: 400px;
+                height: calc(100% - 60px);
+                border-radius: 12px;
+                border: 1px solid var(--border);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                z-index: 40;
+                background: var(--bg-secondary);
+            }
+        }
+
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body class="antialiased overflow-hidden">
+
+    <div id="loader" class="loading-overlay">
+        <div class="spinner"></div>
+        <span class="mt-4 text-[10px] tracking-[0.2em] font-bold text-blue-500 uppercase">Loading Polo Shirt...</span>
+    </div>
+
+    <div id="mobile-menu" class="fixed inset-0 z-[60] bg-[#121212] menu-hidden md:hidden p-10 flex flex-col text-white">
+        <button onclick="toggleMenu()" class="absolute top-10 right-8 text-gray-400 text-2xl font-light">✕</button>
+        <h2 class="text-[18px] font-medium mb-10 text-blue-500 uppercase tracking-widest">Configuration</h2>
+        
+        <div class="mb-8">
+            <label class="text-[11px] font-bold uppercase tracking-wider block mb-4 text-gray-400">Navigation</label>
+            <div class="flex flex-col gap-2">
+                <a href="tshirt.html" class="p-3 bg-[#1e1e1e] border border-[#333] rounded-md text-center text-sm font-bold">T-Shirt</a>
+                <a href="polo.html" class="p-3 bg-blue-600 rounded-md text-center text-sm font-bold">Polo Shirt</a>
+                <a href="qameez_shalwar.html" class="p-3 bg-[#1e1e1e] border border-[#333] rounded-md text-center text-sm font-bold">Qameez Shalwar</a>
+            </div>
+        </div>
+
+        <div class="mt-auto flex flex-col gap-3">
+            <button id="mobile-add-to-cart-btn" class="w-full bg-blue-600 text-white py-4 rounded-md text-[13px] font-bold uppercase tracking-widest">
+                Add to Selection
+            </button>
+        </div>
+    </div>
+<div class="relative flex h-screen w-screen bg-[#0a0a0a]">
+        <!-- Back Button (Desktop & Mobile) -->
+        <a href="index.html" class="absolute top-10 left-8 z-[50] flex items-center gap-3 bg-black/40 backdrop-blur-md border border-[#333] px-5 py-3 rounded-full hover:bg-white hover:text-black transition-all group flex">
+            <span class="text-sm">←</span>
+            <span class="text-[10px] font-bold uppercase tracking-[0.2em]">Back to Collections</span>
+        </a>
+
+    <div class="relative flex h-screen w-screen bg-[#0a0a0a]">
+        <div id="canvas-container" class="relative flex-grow h-full w-full bg-black">
+            <div class="absolute top-10 left-8 z-10 md:hidden invisible">
+                <h2 class="text-[14px] tracking-[0.4em] font-medium uppercase text-blue-500">Polo Studio</h2>
+            </div>
+
+            <div onclick="toggleMenu()" class="absolute top-11 right-8 z-10 md:hidden cursor-pointer">
+                <div class="w-6 h-[2px] bg-blue-500 mb-[5px]"></div>
+                <div class="w-6 h-[2px] bg-blue-500 mb-[5px]"></div>
+                <div class="w-6 h-[2px] bg-blue-500"></div>
+            </div>
+
+            <div class="absolute bottom-0 left-0 right-0 z-20 md:hidden">
+                <div class="bg-[#121212]/90 backdrop-blur-md w-full pt-4 pb-8 px-6 flex flex-col border-t border-[#333]">
+                    <div class="flex gap-4 mb-4 justify-center">
+                        <button id="mobileBodyTab" onclick="setMobileTab(false)" class="text-[10px] font-bold uppercase tracking-widest text-blue-500 border-b-2 border-blue-500 pb-1">Body</button>
+                        <button id="mobileExtraTab" onclick="setMobileTab(true)" class="text-[10px] font-bold uppercase tracking-widest text-gray-500 pb-1">Collar/Cuffs</button>
+                    </div>
+                    <div id="mobileSwatches" class="no-scrollbar flex gap-4 items-center overflow-x-auto w-full justify-start pb-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <aside id="config-panel" class="hidden md:flex p-10 flex-col overflow-y-auto">
+            <header class="mb-10">
+                <h1 class="text-[20px] font-black text-white uppercase tracking-tighter">Short Sleeve Polo</h1>
+                <p class="text-[10px] text-gray-500 tracking-widest mt-1">PIQUE COTTON CLASSIC FIT</p>
+            </header>
+
+            <div class="mb-10">
+                <label class="text-[11px] font-bold uppercase tracking-widest block mb-5 text-gray-500">Main Body Color : <span id="fabricLabel" class="font-normal normal-case text-blue-500 ml-1">White</span></label>
+                <div class="grid grid-cols-6 gap-3" id="desktopFabricSwatches"></div>
+            </div>
+
+            <hr class="mb-10 border-[#333]">
+
+            <div class="mb-10">
+                <label class="text-[11px] font-bold uppercase tracking-widest block mb-5 text-gray-500">Collar & Cuffs : <span id="extraLabel" class="font-normal normal-case text-blue-500 ml-1">White</span></label>
+                <div class="grid grid-cols-6 gap-3" id="desktopExtraSwatches"></div>
+            </div>
+            
+            <div class="mt-auto pt-10 border-t border-[#333]">
+                <div class="flex justify-between items-end mb-6">
+                    <div class="text-[10px] text-gray-500 tracking-widest">UNIT PRICE</div>
+                    <div class="text-2xl font-black text-white">$49.00</div>
+                </div>
+                <button id="add-to-cart-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-md text-[13px] font-black uppercase tracking-[0.2em] transition-all transform hover:scale-[1.02]">
+                    Add to Selection
+                </button>
+                
+            </div>
+        </aside>
+    </div>
+
+    <script>
+         const addToCart = function() {
+             const name = document.querySelector('h1').innerText;
+             const price = document.querySelector('.text-2xl.font-black').innerText.replace('$', '');
+             const body = document.getElementById('fabricLabel').innerText;
+             const extra = document.getElementById('extraLabel').innerText;
+
+             const cartItem = {
+                 name: name,
+                 price: price,
+                 body: body,
+                 extra: extra
+             };
+
+             let cart = JSON.parse(localStorage.getItem('userCart')) || [];
+             cart.push(cartItem);
+             localStorage.setItem('userCart', JSON.stringify(cart));
+
+             alert('Added to Selection!');
+              window.location.href = 'index.html?cart=open';
+          };
+
+         document.getElementById('add-to-cart-btn').onclick = addToCart;
+         document.getElementById('mobile-add-to-cart-btn').onclick = addToCart;
+     </script>
+
+    <script type="importmap">
+         { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let scene, camera, renderer, controls, activeModel;
+        const loader = new GLTFLoader();
+
+        window.toggleMenu = function() {
+            document.getElementById('mobile-menu').classList.toggle('menu-hidden');
+        }
+
+        const fabrics = [
+            { name: "White", color: "#ffffff" },
+            { name: "Black", color: "#1a1a1a" },
+            { name: "Grey", color: "#444444" },
+            { name: "Navy", color: "#1a2a3a" },
+            { name: "Forest", color: "#1a3a2a" },
+            { name: "Ruby", color: "#3a1a1a" },
+            { name: "Blue", color: "#2563eb" },
+            { name: "Teal", color: "#008080" },
+            { name: "Gold", color: "#ffd700" },
+            { name: "Sky", color: "#87ceeb" },
+            { name: "Plum", color: "#dda0dd" },
+            { name: "Tan", color: "#d2b48c" }
+        ];
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color('#000000');
+
+            const container = document.getElementById('canvas-container');
+            camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 0, 3);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 2.0));
+            const frontLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            frontLight.position.set(0, 5, 10);
+            scene.add(frontLight);
+            const backLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            backLight.position.set(0, 5, -10);
+            scene.add(backLight);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.minDistance = 1.2;
+            controls.maxDistance = 4;
+
+            renderAllSwatches();
+            loadModel('polo.glb');
+            animate();
+        }
+
+        function loadModel(modelPath) {
+            console.log("Attempting to load model:", modelPath);
+            document.getElementById('loader').style.display = 'flex';
+            
+            loader.load(modelPath, (gltf) => {
+                console.log("Model loaded successfully from:", modelPath);
+                if (activeModel) scene.remove(activeModel);
+                activeModel = gltf.scene;
+                
+                const box = new THREE.Box3().setFromObject(activeModel);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                
+                activeModel.position.x -= center.x;
+                activeModel.position.y -= center.y;
+                activeModel.position.z -= center.z;
+
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = camera.fov * (Math.PI / 180);
+                let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                // Increased from 1.8 to 2.5 to make the model appear smaller/farther
+                cameraZ *= 2.5; 
+                camera.position.z = cameraZ;
+                camera.updateProjectionMatrix();
+                
+                scene.add(activeModel);
+                applyColor(fabrics[0].color, false);
+                applyColor(fabrics[0].color, true);
+                document.getElementById('loader').style.display = 'none';
+            }, 
+            undefined,
+            (err) => {
+                console.warn("Failed to load from:", modelPath, ". Trying fallback...");
+                // Automatic Fallback
+                const fallbackPath = modelPath.startsWith('public/') ? modelPath.replace('public/', '/') : 'public/' + modelPath;
+                
+                loader.load(fallbackPath, (gltf) => {
+                    console.log("Model loaded successfully from fallback:", fallbackPath);
+                    if (activeModel) scene.remove(activeModel);
+                    activeModel = gltf.scene;
+                    const box = new THREE.Box3().setFromObject(activeModel);
+                    const center = box.getCenter(new THREE.Vector3());
+                    activeModel.position.x -= center.x;
+                    activeModel.position.y -= center.y;
+                    activeModel.position.z -= center.z;
+                    scene.add(activeModel);
+                    applyColor(fabrics[0].color, false);
+                    applyColor(fabrics[0].color, true);
+                    document.getElementById('loader').style.display = 'none';
+                }, undefined, (finalErr) => {
+                    console.error("All loading attempts failed.");
+                    document.getElementById('loader').innerHTML = `
+                        <div class="text-center">
+                            <div class="text-red-500 font-bold mb-2">LOADING ERROR</div>
+                            <div class="text-white text-[10px] uppercase opacity-50">Could not find model file.</div>
+                            <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-600 text-white text-[10px] font-bold rounded">RETRY</button>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        let isMobileExtraActive = false;
+        window.setMobileTab = function(isExtra) {
+            isMobileExtraActive = isExtra;
+            const bodyTab = document.getElementById('mobileBodyTab');
+            const extraTab = document.getElementById('mobileExtraTab');
+            
+            if (isExtra) {
+                extraTab.classList.add('text-blue-500', 'border-b-2', 'border-blue-500');
+                extraTab.classList.remove('text-gray-500');
+                bodyTab.classList.remove('text-blue-500', 'border-b-2', 'border-blue-500');
+                bodyTab.classList.add('text-gray-500');
+            } else {
+                bodyTab.classList.add('text-blue-500', 'border-b-2', 'border-blue-500');
+                bodyTab.classList.remove('text-gray-500');
+                extraTab.classList.remove('text-blue-500', 'border-b-2', 'border-blue-500');
+                extraTab.classList.add('text-gray-500');
+            }
+            renderAllSwatches();
+        }
+
+        function renderAllSwatches() {
+            const mobileContainer = document.getElementById('mobileSwatches');
+            mobileContainer.innerHTML = '';
+            fabrics.forEach((f, i) => {
+                const mobBtn = document.createElement('button');
+                mobBtn.className = `w-12 h-12 rounded-full border-2 border-transparent transition-all shrink-0`;
+                mobBtn.style.backgroundColor = f.color;
+                mobBtn.onclick = () => {
+                    document.querySelectorAll('#mobileSwatches button').forEach(b => b.classList.remove('mobile-swatch-active'));
+                    mobBtn.classList.add('mobile-swatch-active');
+                    applyColor(f.color, isMobileExtraActive);
+                    if (isMobileExtraActive) {
+                        document.getElementById('extraLabel').innerText = f.name;
+                    } else {
+                        document.getElementById('fabricLabel').innerText = f.name;
+                    }
+                };
+                mobileContainer.appendChild(mobBtn);
+            });
+            renderDesktopGroup('desktopFabricSwatches', false);
+            renderDesktopGroup('desktopExtraSwatches', true);
+        }
+
+        function renderDesktopGroup(containerId, isExtraPart) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const labelId = isExtraPart ? 'extraLabel' : 'fabricLabel';
+            fabrics.forEach((f) => {
+                const btn = document.createElement('button');
+                btn.className = `w-full aspect-square rounded-sm border border-[#333] transition-all hover:scale-110`;
+                btn.style.backgroundColor = f.color;
+                btn.onclick = () => {
+                    const sel = isExtraPart ? '#desktopExtraSwatches button' : '#desktopFabricSwatches button';
+                    document.querySelectorAll(sel).forEach(b => b.classList.remove('swatch-active'));
+                    btn.classList.add('swatch-active');
+                    document.getElementById(labelId).innerText = f.name;
+                    applyColor(f.color, isExtraPart);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function applyColor(hex, isExtraPartOnly) {
+            if (!activeModel) return;
+            const col = new THREE.Color(hex);
+            
+            // Extensive keywords for collar, cuffs, and placket in Polo shirts
+            const extraKeywords = [
+                "collar", "neck", "cuff", "rib", "trim", "band", "placket", "button", "stitch", "binding",
+                "cuffs", "neckline", "neck_band", "ribbing", "polo_collar", "sleeve_edge"
+            ];
+
+            // Keywords that should ALWAYS be treated as body, even if they contain extra keywords
+            const bodyOverrideKeywords = ["front", "back", "body", "torso", "shirt", "main", "fabric", "sleeve"];
+            
+            activeModel.traverse(child => {
+                if (child.isMesh && child.material) {
+                    const meshName = (child.name || "").toLowerCase();
+                    const materials = Array.isArray(child.material) ? child.material : [child.material];
+                    
+                    materials.forEach(mat => {
+                        const matName = (mat.name || "").toLowerCase();
+                        const fullName = meshName + " " + matName;
+                        
+                        // Check if it's an extra part (collar, cuffs, etc.)
+                        let isExtra = extraKeywords.some(k => fullName.includes(k));
+                        
+                        // Override: if it contains body keywords, it's NOT extra
+                        if (bodyOverrideKeywords.some(k => fullName.includes(k))) {
+                            isExtra = false;
+                        }
+                        
+                        if (isExtraPartOnly) {
+                            if (isExtra) {
+                                mat.color.set(col);
+                                mat.roughness = 0.6;
+                            }
+                        } else {
+                            if (!isExtra) {
+                                mat.color.set(col);
+                                mat.roughness = 0.5;
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) controls.update();
+            if (renderer && scene && camera) renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('canvas-container');
+            if (camera) {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+            }
+            if (renderer) renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>

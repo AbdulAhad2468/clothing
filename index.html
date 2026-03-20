@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tailor Made - Collection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0a0a0a; color: white; font-family: sans-serif; }
+        .product-card { background: #121212; border: 1px solid #333; transition: 0.3s; }
+        .product-card:hover { border-color: #2563eb; transform: translateY(-5px); }
+        #cart-sidebar { transform: translateX(100%); transition: 0.3s ease-in-out; }
+        #cart-sidebar.open { transform: translateX(0); }
+    </style>
+</head>
+<body class="p-5 md:p-10">
+
+    <header class="flex justify-between items-center mb-12">
+        <h1 class="text-2xl font-black uppercase tracking-tighter">Tailor Made Studio</h1>
+        <button onclick="toggleCart()" class="bg-blue-600 px-6 py-2 rounded-full font-bold flex items-center gap-2">
+            🛒 Cart (<span id="cart-count">0</span>)
+        </button>
+    </header>
+
+    <main class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="product-card p-6 rounded-xl text-center">
+            <img src="tshirt.png" class="w-full h-64 object-contain mb-4">
+            <h2 class="text-xl font-bold">Custom T-Shirt</h2>
+            <p class="text-gray-500 mb-6">$29.00</p>
+            <a href="shirt.html" class="inline-block w-full bg-white text-black py-3 rounded font-bold uppercase text-sm">Configure</a>
+        </div>
+
+        <div class="product-card p-6 rounded-xl text-center">
+            <img src="poloshirt.png" class="w-full h-64 object-contain mb-4">
+            <h2 class="text-xl font-bold">Elite Polo</h2>
+            <p class="text-gray-500 mb-6">$49.00</p>
+            <a href="polo.html" class="inline-block w-full bg-white text-black py-3 rounded font-bold uppercase text-sm">Configure</a>
+        </div>
+
+        <div class="product-card p-6 rounded-xl text-center">
+            <img src="qameezshalwar.png" class="w-full h-64 object-contain mb-4">
+            <h2 class="text-xl font-bold">Qameez Shalwar</h2>
+            <p class="text-gray-500 mb-6">$89.00</p>
+            <a href="qameez_shalwar.html" class="inline-block w-full bg-white text-black py-3 rounded font-bold uppercase text-sm">Configure</a>
+        </div>
+    </main>
+
+    <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full md:w-96 bg-[#121212] z-50 p-8 shadow-2xl border-l border-blue-900">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-2xl font-bold">Your Cart</h2>
+            <button onclick="toggleCart()" class="text-gray-400">Close ✕</button>
+        </div>
+        
+        <div id="cart-items-list" class="flex-grow overflow-y-auto max-h-[50vh] mb-6">
+            </div>
+
+        <form id="checkout-form" class="border-t border-[#333] pt-6">
+            <h3 class="mb-4 text-blue-500 font-bold uppercase text-xs">Checkout Details</h3>
+            <input type="text" placeholder="Full Name" required class="w-full bg-[#1e1e1e] border border-[#333] p-3 rounded mb-3 text-white">
+            <input type="email" placeholder="Email Address" required class="w-full bg-[#1e1e1e] border border-[#333] p-3 rounded mb-3 text-white">
+            <button type="submit" class="w-full bg-green-600 py-4 rounded font-bold uppercase tracking-widest">Complete Order</button>
+        </form>
+    </div>
+
+    <script>
+        function toggleCart() {
+            document.getElementById('cart-sidebar').classList.toggle('open');
+            renderCart();
+        }
+
+        function renderCart() {
+            const cart = JSON.parse(localStorage.getItem('userCart')) || [];
+            const container = document.getElementById('cart-items-list');
+            const countLabel = document.getElementById('cart-count');
+            
+            countLabel.innerText = cart.length;
+            container.innerHTML = cart.length === 0 ? '<p class="text-gray-500">Cart is empty</p>' : '';
+            
+            cart.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="flex justify-between items-center mb-4 bg-[#1e1e1e] p-3 rounded border border-gray-800">
+                        <div class="flex-grow">
+                            <p class="font-bold text-sm text-white">${item.name}</p>
+                            <p class="text-[9px] text-gray-400 uppercase tracking-tighter">Body: ${item.body} | Trim: ${item.extra}</p>
+                            <p class="font-bold text-blue-500 text-sm mt-1">$${item.price}</p>
+                        </div>
+                        <button onclick="removeFromCart(${index})" class="text-red-500 text-xs font-bold p-2 hover:bg-red-500/10 rounded transition-colors">✕</button>
+                    </div>
+                `;
+            });
+        }
+
+        function removeFromCart(index) {
+            let cart = JSON.parse(localStorage.getItem('userCart')) || [];
+            cart.splice(index, 1);
+            localStorage.setItem('userCart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        document.getElementById('checkout-form').onsubmit = (e) => {
+            e.preventDefault();
+            alert("Order Placed Successfully! Site will now restart.");
+            localStorage.clear();
+            window.location.href = "index.html";
+        };
+
+        window.onload = () => {
+            renderCart();
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('cart') === 'open') {
+                toggleCart();
+            }
+        };
+    </script>
+</body>
+</html>
